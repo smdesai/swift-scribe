@@ -2,6 +2,11 @@ import AVFoundation
 import Foundation
 import SwiftUI
 
+// MARK: - Color Extensions
+extension Color {
+    static let transcriptionGreen = Color(red: 0.36, green: 0.69, blue: 0.55).opacity(0.8)  // #5DAF8D
+}
+
 enum TranscriptionState {
     case transcribing
     case notTranscribing
@@ -14,6 +19,8 @@ public enum TranscriptionError: Error {
     case localeNotSupported
     case noInternetForModelDownload
     case audioFilePathNotFound
+    case modelNotLoaded
+    case audioProcessingFailed
 
     var descriptionString: String {
         switch self {
@@ -31,6 +38,10 @@ public enum TranscriptionError: Error {
                 "The model could not be downloaded because the user is not connected to internet."
         case .audioFilePathNotFound:
             return "Couldn't write audio to file."
+        case .modelNotLoaded:
+            return "WhisperKit model is not loaded. Please wait for the model to load."
+        case .audioProcessingFailed:
+            return "Failed to process audio data."
         }
     }
 }
@@ -49,25 +60,4 @@ public enum PlaybackState: Equatable {
 public struct AudioData: @unchecked Sendable {
     var buffer: AVAudioPCMBuffer
     var time: AVAudioTime
-}
-
-// Ask for permission to access the microphone.
-extension Recorder {
-    nonisolated func isAuthorized() async -> Bool {
-        if AVCaptureDevice.authorizationStatus(for: .audio) == .authorized {
-            return true
-        }
-
-        return await AVCaptureDevice.requestAccess(for: .audio)
-    }
-}
-
-extension AVAudioPlayerNode {
-    var currentTime: TimeInterval {
-        guard let nodeTime: AVAudioTime = self.lastRenderTime,
-            let playerTime: AVAudioTime = self.playerTime(forNodeTime: nodeTime)
-        else { return 0 }
-
-        return Double(playerTime.sampleTime) / playerTime.sampleRate
-    }
 }

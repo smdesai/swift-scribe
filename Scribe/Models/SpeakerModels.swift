@@ -18,6 +18,11 @@ class Speaker {
     var colorBlue: Double
     var createdAt: Date
     var embedding: [Float]?
+    var lastSeenAt: Date?
+    var totalSegments: Int = 0
+    var averageConfidence: Float = 0.0
+    var isUserNamed: Bool = false  // True if user manually set the name
+    var isPersistent: Bool = false  // True if this speaker should be retained for future memos
     
     // Computed property for SwiftUI Color
     var displayColor: Color {
@@ -130,8 +135,58 @@ struct DiarizationConfig {
     var minSegmentDuration: TimeInterval = 0.5
     var maxSpeakers: Int? = nil
     var enableRealTimeProcessing: Bool = false
+    var persistSpeakerDatabase: Bool = true
+    var minActivityThreshold: Float = 10.0
     
     static let `default` = DiarizationConfig()
+}
+
+// MARK: - Global Speaker Database
+
+@Model
+class SpeakerDatabase {
+    var id: String
+    var speakerEmbeddings: Data? // Serialized dictionary of speaker ID to embedding
+    var lastUpdated: Date
+    
+    @Transient private var _embeddingsCache: [String: [Float]]?
+    
+    var embeddings: [String: [Float]] {
+        get {
+            if let cache = _embeddingsCache {
+                return cache
+            }
+            guard let data = speakerEmbeddings,
+                  let decoded = try? JSONDecoder().decode([String: [Float]].self, from: data) else {
+                return [:]
+            }
+            _embeddingsCache = decoded
+            return decoded
+        }
+        set {
+            _embeddingsCache = newValue
+            speakerEmbeddings = try? JSONEncoder().encode(newValue)
+            lastUpdated = Date()
+        }
+    }
+    
+    init() {
+        self.id = "global_speaker_db"
+        self.lastUpdated = Date()
+        self.speakerEmbeddings = nil
+    }
+    
+    static func shared(in context: ModelContext) -> SpeakerDatabase {
+        let descriptor = FetchDescriptor<SpeakerDatabase>(predicate: #Predicate { $0.id == "global_speaker_db" })
+        
+        if let existing = try? context.fetch(descriptor).first {
+            return existing
+        }
+        
+        let new = SpeakerDatabase()
+        context.insert(new)
+        return new
+    }
 }
 
 // MARK: - Speaker Attribution Extension
@@ -156,22 +211,146 @@ extension AttributeScopes.FoundationAttributes {
 // MARK: - Speaker Management Extensions
 
 extension Speaker {
-    static func findOrCreate(withId id: String, in context: ModelContext) -> Speaker {
-        let descriptor = FetchDescriptor<Speaker>(predicate: #Predicate { $0.id == id })
+    static func findOrCreate(withId id: String, embedding: [Float]? = nil, in context: ModelContext) -> Speaker {
+        let speakerId = id
+        let descriptor = FetchDescriptor<Speaker>(predicate: #Predicate { speaker in
+            speaker.id == speakerId
+        })
         
+        // First check if speaker with this ID already exists
         if let existingSpeaker = try? context.fetch(descriptor).first {
+            existingSpeaker.lastSeenAt = Date()
+            // Update embedding if provided and speaker doesn't have one
+            if existingSpeaker.embedding == nil, let embedding = embedding {
+                existingSpeaker.embedding = embedding
+            }
             return existingSpeaker
         }
+        
+        // Note: Speaker matching by embedding should be done in DiarizationManager
+        // This method should only create a speaker with the given ID
+        // The ID should already be determined by the matching logic
         
         // Create new speaker with generated name and color
         let speakerCount = (try? context.fetch(FetchDescriptor<Speaker>()).count) ?? 0
         let newSpeaker = Speaker(
             id: id,
             name: "Speaker \(speakerCount + 1)",
-            displayColor: Speaker.generateSpeakerColor(for: speakerCount)
+            displayColor: Speaker.generateSpeakerColor(for: speakerCount),
+            embedding: embedding
         )
+        newSpeaker.lastSeenAt = Date()
         
         context.insert(newSpeaker)
+        
+        // Try to save immediately
+        do {
+            try context.save()
+        } catch {
+            // Silently handle save errors - the context will be saved later
+        }
+        
         return newSpeaker
+    }
+    
+    // Find persistent speaker by embedding similarity
+    static func findPersistentSpeakerBySimilarity(embedding: [Float], threshold: Float = 0.85, in context: ModelContext) -> Speaker? {
+        let descriptor = FetchDescriptor<Speaker>(predicate: #Predicate { speaker in
+            speaker.isPersistent == true
+        })
+        guard let speakers = try? context.fetch(descriptor) else { return nil }
+        
+        var bestMatch: (speaker: Speaker, similarity: Float)?
+        
+        for speaker in speakers {
+            // Skip speakers without embeddings or with isPersistent = false
+            guard speaker.isPersistent == true,
+                  let speakerEmbedding = speaker.embedding else { continue }
+            let similarity = cosineSimilarity(embedding, speakerEmbedding)
+            if similarity >= threshold {
+                if bestMatch == nil || similarity > bestMatch!.similarity {
+                    bestMatch = (speaker, similarity)
+                }
+            }
+        }
+        
+        return bestMatch?.speaker
+    }
+    
+    // Update speaker statistics
+    func updateStatistics(confidence: Float) {
+        totalSegments += 1
+        // Update running average confidence
+        averageConfidence = ((averageConfidence * Float(totalSegments - 1)) + confidence) / Float(totalSegments)
+        lastSeenAt = Date()
+    }
+    
+    // Migrate existing named speakers to be persistent
+    static func migrateNamedSpeakersToPersistent(in context: ModelContext) {
+        let descriptor = FetchDescriptor<Speaker>(predicate: #Predicate { speaker in
+            speaker.isUserNamed == true && speaker.isPersistent == false
+        })
+        
+        if let speakers = try? context.fetch(descriptor) {
+            for speaker in speakers {
+                speaker.isPersistent = true
+                
+                // Save to persistent storage
+                PersistentSpeakerManager.shared.saveSpeaker(speaker)
+            }
+            
+            do {
+                try context.save()
+                print("Migrated \(speakers.count) named speakers to persistent storage")
+            } catch {
+                print("Failed to migrate speakers: \(error)")
+            }
+        }
+        
+        // Also ensure all persistent speakers in database are saved to disk
+        let persistentDescriptor = FetchDescriptor<Speaker>(predicate: #Predicate { speaker in
+            speaker.isPersistent == true
+        })
+        
+        if let persistentSpeakers = try? context.fetch(persistentDescriptor) {
+            for speaker in persistentSpeakers {
+                if speaker.embedding != nil {
+                    PersistentSpeakerManager.shared.saveSpeaker(speaker)
+                }
+            }
+        }
+    }
+    
+    // Find speaker by embedding similarity
+    static func findBySimilarity(embedding: [Float], threshold: Float = 0.7, in context: ModelContext) -> Speaker? {
+        let descriptor = FetchDescriptor<Speaker>()
+        guard let speakers = try? context.fetch(descriptor) else { return nil }
+        
+        for speaker in speakers {
+            guard let speakerEmbedding = speaker.embedding else { continue }
+            let similarity = cosineSimilarity(embedding, speakerEmbedding)
+            if similarity >= threshold {
+                return speaker
+            }
+        }
+        return nil
+    }
+    
+    // Calculate cosine similarity between embeddings
+    static func cosineSimilarity(_ a: [Float], _ b: [Float]) -> Float {
+        guard a.count == b.count, !a.isEmpty else { return 0 }
+        
+        var dotProduct: Float = 0
+        var magnitudeA: Float = 0
+        var magnitudeB: Float = 0
+        
+        for i in 0..<a.count {
+            dotProduct += a[i] * b[i]
+            magnitudeA += a[i] * a[i]
+            magnitudeB += b[i] * b[i]
+        }
+        
+        let magnitude = sqrt(magnitudeA) * sqrt(magnitudeB)
+        return magnitude > 0 ? dotProduct / magnitude : 0
     }
 }

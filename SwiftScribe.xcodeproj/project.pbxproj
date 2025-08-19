@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		038B23BE2E402D7B00027CDC /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 038B23BD2E402D7B00027CDC /* WhisperKit */; };
+		7B04EF9A2E53C375001D90E3 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 7B04EF992E53C375001D90E3 /* FluidAudio */; };
+		7BA638902E55300600ACCE78 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 7BA6388F2E55300600ACCE78 /* FluidAudio */; };
 		C70FF5082E276CF400B8B729 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = C70FF5072E276CF400B8B729 /* FluidAudio */; };
 /* End PBXBuildFile section */
 
@@ -29,6 +32,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7BA638902E55300600ACCE78 /* FluidAudio in Frameworks */,
+				038B23BE2E402D7B00027CDC /* WhisperKit in Frameworks */,
+				7B04EF9A2E53C375001D90E3 /* FluidAudio in Frameworks */,
 				C70FF5082E276CF400B8B729 /* FluidAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -110,7 +116,8 @@
 			);
 			mainGroup = 56177C732DA2E84500A2A2BB;
 			packageReferences = (
-				C70FF5062E276CF400B8B729 /* XCRemoteSwiftPackageReference "FluidAudio" */,
+				038B23BC2E402D7B00027CDC /* XCRemoteSwiftPackageReference "WhisperKit" */,
+				7BA6388E2E55300600ACCE78 /* XCLocalSwiftPackageReference "../FluidAudio-git" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 56177C7D2DA2E84500A2A2BB /* Products */;
@@ -301,7 +308,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 3N32CBY2V2;
+				DEVELOPMENT_TEAM = TA92TEWDS4;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -336,7 +343,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.swift.examples.scribe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sdesai.swift.examples.scribe;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.swift.examples.scribe.ios;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.swift.examples.scribe.macos;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -368,7 +375,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 3N32CBY2V2;
+				DEVELOPMENT_TEAM = TA92TEWDS4;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -403,7 +410,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.swift.examples.scribe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sdesai.swift.examples.scribe;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.swift.examples.scribe.ios;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.swift.examples.scribe.macos;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -447,7 +454,22 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		7BA6388E2E55300600ACCE78 /* XCLocalSwiftPackageReference "../FluidAudio-git" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../FluidAudio-git";
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
+		038B23BC2E402D7B00027CDC /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		C70FF5062E276CF400B8B729 /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/FluidInference/FluidAudio/";
@@ -459,6 +481,19 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		038B23BD2E402D7B00027CDC /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 038B23BC2E402D7B00027CDC /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
+		7B04EF992E53C375001D90E3 /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FluidAudio;
+		};
+		7BA6388F2E55300600ACCE78 /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FluidAudio;
+		};
 		C70FF5072E276CF400B8B729 /* FluidAudio */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C70FF5062E276CF400B8B729 /* XCRemoteSwiftPackageReference "FluidAudio" */;

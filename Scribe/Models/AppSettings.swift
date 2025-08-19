@@ -11,6 +11,14 @@ class AppSettings {
     var minSegmentDuration: TimeInterval = 0.5
     var maxSpeakers: Int? = nil
     var enableRealTimeProcessing: Bool = false
+    var combineSameSpeakerSegments: Bool = false
+    var mergePartialSentences: Bool = false
+    
+    // Advanced diarization settings from FluidAudio
+    var enableSpeakerMerging: Bool = true
+    var speakerMergingThreshold: Float = 0.3
+    var chunkDuration: Float = 10.0
+    var chunkOverlap: Float = 2.0
 
     init() {
         // Load saved settings
@@ -63,6 +71,14 @@ class AppSettings {
         minSegmentDuration = UserDefaults.standard.object(forKey: "minSegmentDuration") as? TimeInterval ?? 0.5
         maxSpeakers = UserDefaults.standard.object(forKey: "maxSpeakers") as? Int
         enableRealTimeProcessing = UserDefaults.standard.object(forKey: "enableRealTimeProcessing") as? Bool ?? false
+        combineSameSpeakerSegments = UserDefaults.standard.object(forKey: "combineSameSpeakerSegments") as? Bool ?? false
+        mergePartialSentences = UserDefaults.standard.object(forKey: "mergePartialSentences") as? Bool ?? false
+        
+        // Load advanced settings
+        enableSpeakerMerging = UserDefaults.standard.object(forKey: "enableSpeakerMerging") as? Bool ?? true
+        speakerMergingThreshold = UserDefaults.standard.object(forKey: "speakerMergingThreshold") as? Float ?? 0.3
+        chunkDuration = UserDefaults.standard.object(forKey: "chunkDuration") as? Float ?? 10.0
+        chunkOverlap = UserDefaults.standard.object(forKey: "chunkOverlap") as? Float ?? 2.0
     }
     
     func setDiarizationEnabled(_ enabled: Bool) {
@@ -94,16 +110,65 @@ class AppSettings {
         UserDefaults.standard.set(enabled, forKey: "enableRealTimeProcessing")
     }
     
-    /// Returns the current diarization configuration for FluidAudio
+    func setCombineSameSpeakerSegments(_ enabled: Bool) {
+        self.combineSameSpeakerSegments = enabled
+        UserDefaults.standard.set(enabled, forKey: "combineSameSpeakerSegments")
+    }
+    
+    func setMergePartialSentences(_ enabled: Bool) {
+        self.mergePartialSentences = enabled
+        UserDefaults.standard.set(enabled, forKey: "mergePartialSentences")
+    }
+    
+    func setEnableSpeakerMerging(_ enabled: Bool) {
+        self.enableSpeakerMerging = enabled
+        UserDefaults.standard.set(enabled, forKey: "enableSpeakerMerging")
+    }
+    
+    func setSpeakerMergingThreshold(_ threshold: Float) {
+        self.speakerMergingThreshold = threshold
+        UserDefaults.standard.set(threshold, forKey: "speakerMergingThreshold")
+    }
+    
+    func setChunkDuration(_ duration: Float) {
+        self.chunkDuration = duration
+        UserDefaults.standard.set(duration, forKey: "chunkDuration")
+    }
+    
+    func setChunkOverlap(_ overlap: Float) {
+        self.chunkOverlap = overlap
+        UserDefaults.standard.set(overlap, forKey: "chunkOverlap")
+    }
+    
+    /// Returns the current diarization configuration for FluidAudio v3
     func diarizationConfig() -> DiarizerConfig {
-        return DiarizerConfig(
+        // Optimize based on performance preference
+        let performanceMode = UserDefaults.standard.string(forKey: "diarizationPerformanceMode") ?? "balanced"
+        
+        // FluidAudio v3 configuration with new parameter names
+        var config = DiarizerConfig(
             clusteringThreshold: clusteringThreshold,
-            minDurationOn: Float(minSegmentDuration),
-            minDurationOff: 0.5, // Default value from FluidAudio
-            numClusters: maxSpeakers ?? -1, // -1 for auto-detect
-            minActivityThreshold: 10.0, // Default value from FluidAudio
-            debugMode: false,
-            modelCacheDirectory: nil
+            minSpeechDuration: Float(minSegmentDuration), // v3: renamed from minDurationOn
+            minSilenceGap: 0.5, // v3: renamed from minDurationOff
+            minActiveFramesCount: 10.0, // v3: renamed from minActivityThreshold
+            debugMode: false
         )
+        
+        // Adjust parameters based on performance mode
+        switch performanceMode {
+        case "fast":
+            // Optimize for speed - less accurate but faster
+            config.clusteringThreshold = min(0.4, clusteringThreshold + 0.05) // More lenient clustering
+            config.minSpeechDuration = max(1.0, Float(minSegmentDuration)) // Longer minimum segments
+        case "accurate":
+            // Optimize for accuracy - slower but more precise
+            config.clusteringThreshold = max(0.25, clusteringThreshold - 0.05) // Stricter clustering
+            config.minSpeechDuration = min(0.5, Float(minSegmentDuration)) // Shorter minimum segments
+        default: // "balanced"
+            // Use default settings
+            break
+        }
+        
+        return config
     }
 }
