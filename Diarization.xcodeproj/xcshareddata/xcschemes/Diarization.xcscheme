@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "56177C7B2DA2E84500A2A2BB"
-               BuildableName = "SwiftScribe.app"
-               BlueprintName = "SwiftScribe"
-               ReferencedContainer = "container:SwiftScribe.xcodeproj">
+               BuildableName = "Diarization.app"
+               BlueprintName = "Diarization"
+               ReferencedContainer = "container:Diarization.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "56177C7B2DA2E84500A2A2BB"
-            BuildableName = "SwiftScribe.app"
-            BlueprintName = "SwiftScribe"
-            ReferencedContainer = "container:SwiftScribe.xcodeproj">
+            BuildableName = "Diarization.app"
+            BlueprintName = "Diarization"
+            ReferencedContainer = "container:Diarization.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "56177C7B2DA2E84500A2A2BB"
-            BuildableName = "SwiftScribe.app"
-            BlueprintName = "SwiftScribe"
-            ReferencedContainer = "container:SwiftScribe.xcodeproj">
+            BuildableName = "Diarization.app"
+            BlueprintName = "Diarization"
+            ReferencedContainer = "container:Diarization.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

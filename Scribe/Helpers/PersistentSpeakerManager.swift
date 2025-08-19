@@ -51,7 +51,7 @@ final class PersistentSpeakerManager: ObservableObject, @unchecked Sendable {
     
     @Published private(set) var persistentProfiles: [String: PersistentSpeakerProfile] = [:]
     
-    private let queue = DispatchQueue(label: "com.swiftscribe.speakermanager", attributes: .concurrent)
+    private let queue = DispatchQueue(label: "com.diarization.speakermanager", attributes: .concurrent)
     
     private let documentsDirectory: URL
     private let speakersFile: URL

@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 
 @main
-struct SwiftTranscriptionSampleApp: App {
+struct DiarizationApp: App {
     @State private var settings = AppSettings()
     @StateObject private var whisperKitManager = WhisperKitManager.shared
 
